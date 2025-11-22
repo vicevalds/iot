@@ -150,8 +150,8 @@ app.get('*', (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
-  console.log(`Endpoint para reproducir audio: POST http://localhost:${port}/api/audio/play`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en http://0.0.0.0:${port}`);
+  console.log(`Endpoint para reproducir audio: POST http://0.0.0.0:${port}/api/audio/play`);
 });
 
