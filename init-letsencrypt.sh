@@ -14,13 +14,31 @@ if ! docker compose version &> /dev/null; then
     exit 1
 fi
 
-# Iniciar nginx con configuración temporal
-echo "📦 Iniciando nginx con configuración temporal..."
-docker compose up -d nginx
+# Detener contenedores existentes si están corriendo
+echo "🛑 Deteniendo contenedores existentes..."
+docker compose down 2>/dev/null || true
 
-# Esperar a que nginx esté listo
+# Iniciar nginx con configuración temporal (sin esperar a la app)
+echo "📦 Iniciando nginx con configuración temporal..."
+# Iniciar nginx sin la dependencia de la app para obtener certificados
+docker compose up -d --no-deps nginx
+
+# Esperar a que nginx esté listo y verificar que responde
 echo "⏳ Esperando a que nginx esté listo..."
-sleep 5
+for i in {1..30}; do
+    if docker compose exec -T nginx wget --quiet --spider http://localhost/ > /dev/null 2>&1; then
+        echo "✅ Nginx está listo"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "❌ Nginx no responde después de 30 intentos"
+        echo "📋 Logs de nginx:"
+        docker compose logs nginx | tail -20
+        exit 1
+    fi
+    sleep 1
+done
+sleep 2
 
 # Obtener certificados
 echo "🔐 Obteniendo certificados SSL de Let's Encrypt..."
@@ -57,8 +75,17 @@ else
     echo "   - Los puertos 80 y 443 están abiertos en el firewall"
     echo "   - El email $EMAIL es válido"
     echo ""
+    echo "⚠️  Si usas Cloudflare:"
+    echo "   - El error 521 significa que Cloudflare no puede conectarse al servidor"
+    echo "   - Asegúrate de que Cloudflare esté en modo 'DNS Only' (gris) o 'Proxied' con SSL flexible"
+    echo "   - O desactiva el proxy de Cloudflare temporalmente para obtener certificados"
+    echo "   - Verifica que el servidor sea accesible directamente (sin Cloudflare)"
+    echo ""
     echo "🔍 Para ver los logs de certbot, ejecuta:"
     echo "   docker compose logs certbot"
+    echo ""
+    echo "🔍 Para verificar que nginx está sirviendo el challenge:"
+    echo "   curl http://$DOMAIN/.well-known/acme-challenge/test"
     exit 1
 fi
 
