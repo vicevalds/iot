@@ -6,7 +6,7 @@ Este proyecto está configurado para usar nginx como proxy reverso con certifica
 
 1. El dominio `input.vvaldes.me` debe apuntar a la IP de este servidor
 2. Los puertos 80 y 443 deben estar abiertos en el firewall
-3. Docker y docker-compose deben estar instalados
+3. Docker y docker compose deben estar instalados
 
 ## Configuración inicial
 
@@ -32,7 +32,7 @@ Este script:
 ### 3. Iniciar todos los servicios
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Estructura
@@ -52,13 +52,13 @@ Para verificar que los certificados están funcionando:
 
 ```bash
 # Ver logs de nginx
-docker-compose logs nginx
+docker compose logs nginx
 
 # Ver logs de certbot
-docker-compose logs certbot
+docker compose logs certbot
 
 # Verificar certificados dentro del contenedor
-docker-compose exec certbot ls -la /etc/letsencrypt/live/input.vvaldes.me/
+docker compose exec certbot ls -la /etc/letsencrypt/live/input.vvaldes.me/
 ```
 
 ## Solución de problemas
@@ -79,19 +79,19 @@ docker-compose exec certbot ls -la /etc/letsencrypt/live/input.vvaldes.me/
 
 3. Revisa los logs:
    ```bash
-   docker-compose logs certbot
+   docker compose logs certbot
    ```
 
 ### Nginx no inicia con SSL
 
 1. Verifica que los certificados existen:
    ```bash
-   docker-compose exec certbot test -f /etc/letsencrypt/live/input.vvaldes.me/fullchain.pem
+   docker compose exec certbot test -f /etc/letsencrypt/live/input.vvaldes.me/fullchain.pem
    ```
 
 2. Verifica la configuración de nginx:
    ```bash
-   docker-compose exec nginx nginx -t
+   docker compose exec nginx nginx -t
    ```
 
 ## Acceso a la aplicación

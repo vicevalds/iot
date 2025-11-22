@@ -43,34 +43,34 @@ fi
 case "${1:-build}" in
     build)
         echo -e "${GREEN}Construyendo imagen Docker...${NC}\n"
-        docker-compose build
+        docker compose build
         echo -e "\n${GREEN}✓ Construcción completada${NC}\n"
         echo -e "Ejecuta: ${YELLOW}./docker-run.sh up${NC} para iniciar el contenedor"
         ;;
     up|start)
         echo -e "${GREEN}Iniciando contenedor...${NC}\n"
-        docker-compose up -d
+        docker compose up -d
         echo -e "\n${GREEN}✓ Contenedor iniciado${NC}"
         echo -e "La aplicación está disponible en: ${YELLOW}http://localhost:3000${NC}\n"
-        echo -e "Ver logs: ${YELLOW}docker-compose logs -f${NC}"
+        echo -e "Ver logs: ${YELLOW}docker compose logs -f${NC}"
         ;;
     down|stop)
         echo -e "${GREEN}Deteniendo contenedor...${NC}\n"
-        docker-compose down
+        docker compose down
         echo -e "${GREEN}✓ Contenedor detenido${NC}\n"
         ;;
     logs)
         echo -e "${GREEN}Mostrando logs...${NC}\n"
-        docker-compose logs -f
+        docker compose logs -f
         ;;
     restart)
         echo -e "${GREEN}Reiniciando contenedor...${NC}\n"
-        docker-compose restart
+        docker compose restart
         echo -e "${GREEN}✓ Contenedor reiniciado${NC}\n"
         ;;
     shell|bash)
         echo -e "${GREEN}Abriendo shell en el contenedor...${NC}\n"
-        docker-compose exec app /bin/bash || docker-compose exec app /bin/sh
+        docker compose exec app /bin/bash || docker compose exec app /bin/sh
         ;;
     *)
         echo -e "Uso: $0 [comando]"

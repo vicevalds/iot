@@ -14,16 +14,16 @@ Aplicación web para grabar audio y enviarlo a un servidor externo, con capacida
 
 ```bash
 # Construir la imagen
-docker-compose build
+docker compose build
 
 # Ejecutar el contenedor
-docker-compose up -d
+docker compose up -d
 
 # Ver logs
-docker-compose logs -f
+docker compose logs -f
 
 # Detener el contenedor
-docker-compose down
+docker compose down
 ```
 
 La aplicación estará disponible en `http://localhost:3000`

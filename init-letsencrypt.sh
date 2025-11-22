@@ -8,15 +8,15 @@ EMAIL="vvaldesf@protonmail.com"  # Cambia esto por tu email
 
 echo "🚀 Iniciando configuración de SSL para $DOMAIN"
 
-# Verificar que docker-compose está disponible
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose no está instalado"
+# Verificar que docker compose está disponible
+if ! docker compose version &> /dev/null; then
+    echo "❌ docker compose no está instalado"
     exit 1
 fi
 
 # Iniciar nginx con configuración temporal
 echo "📦 Iniciando nginx con configuración temporal..."
-docker-compose up -d nginx
+docker compose up -d nginx
 
 # Esperar a que nginx esté listo
 echo "⏳ Esperando a que nginx esté listo..."
@@ -24,7 +24,7 @@ sleep 5
 
 # Obtener certificados
 echo "🔐 Obteniendo certificados SSL de Let's Encrypt..."
-docker-compose run --rm certbot certonly \
+docker compose run --rm certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $EMAIL \
@@ -36,12 +36,12 @@ docker-compose run --rm certbot certonly \
 echo "🔍 Verificando certificados..."
 sleep 2
 
-if docker-compose exec -T certbot test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
+if docker compose exec -T certbot test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
     echo "✅ Certificados obtenidos exitosamente"
     
     # Recargar nginx con la configuración SSL completa
     echo "🔄 Reiniciando nginx con configuración SSL..."
-    docker-compose restart nginx
+    docker compose restart nginx
     
     echo ""
     echo "✅ Configuración SSL completada!"
@@ -57,7 +57,7 @@ else
     echo "   - El email $EMAIL es válido"
     echo ""
     echo "🔍 Para ver los logs de certbot, ejecuta:"
-    echo "   docker-compose logs certbot"
+    echo "   docker compose logs certbot"
     exit 1
 fi
 
