@@ -62,8 +62,15 @@ services:
       - certbot-conf:/etc/letsencrypt
     networks:
       - iot-network
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    # Renovación automática: verifica cada 12 horas y renueva si es necesario
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot --webroot-path=/var/www/certbot --quiet && echo \"Certificado renovado: $(date)\"; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
+    # Healthcheck para verificar que certbot está funcionando
+    healthcheck:
+      test: ["CMD", "test", "-d", "/etc/letsencrypt/live"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
 
 volumes:
   certbot-www:
