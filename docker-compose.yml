@@ -60,7 +60,7 @@ services:
     networks:
       - iot-network
     # Renovación automática: verifica cada 12 horas y renueva si es necesario
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot --webroot-path=/var/www/certbot --quiet && echo \"Certificado renovado: $(date)\"; sleep 12h & wait $${!}; done;'"
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot --webroot-path=/var/www/certbot --quiet && echo "Certificado renovado:$$(date)"; sleep 12h & wait $${!}; done;'
     restart: unless-stopped
     # Healthcheck para verificar que certbot está funcionando
     healthcheck:
