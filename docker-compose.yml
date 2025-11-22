@@ -42,9 +42,6 @@ services:
       - certbot-conf:/etc/letsencrypt
     networks:
       - iot-network
-    depends_on:
-      app:
-        condition: service_healthy
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     healthcheck:

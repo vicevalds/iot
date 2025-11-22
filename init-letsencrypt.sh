@@ -4,7 +4,7 @@
 # Uso: ./init-letsencrypt.sh [DOMAIN] [EMAIL]
 # Ejemplo: ./init-letsencrypt.sh example.com user@example.com
 
-DOMAIN="${1:-input.vvaldes.me}"
+DOMAIN="${1:-iot.vvaldes.me}"
 EMAIL="${2:-vvaldesf@protonmail.com}"
 
 echo "🚀 Iniciando configuración de SSL para $DOMAIN"
