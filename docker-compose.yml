@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      # Variables para PulseAudio (ajustar PULSE_SERVER según tu usuario)
+      - PULSE_SERVER=unix:/run/user/1000/pulse/native
+    volumes:
+      # Montar el socket de PulseAudio del host para reproducir audio
+      # Nota: Cambia 1000 por tu UID si es diferente (ejecuta: id -u para ver tu UID)
+      - /run/user/1000/pulse:/run/user/1000/pulse:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      # Montar directorio temporal para archivos de audio
+      - ./temp:/app/temp
+    # Usar network_mode host para mejor acceso a servicios locales
+    network_mode: host
+    restart: unless-stopped
+
