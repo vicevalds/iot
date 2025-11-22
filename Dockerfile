@@ -21,10 +21,11 @@ RUN pnpm run build
 # Stage 2: Production image
 FROM node:20-slim
 
-# Instalar dependencias del sistema para reproducir audio
+# Instalar dependencias del sistema para reproducir audio y herramientas
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     ffmpeg \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar pnpm

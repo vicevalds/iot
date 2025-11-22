@@ -24,19 +24,20 @@ sleep 5
 
 # Obtener certificados
 echo "🔐 Obteniendo certificados SSL de Let's Encrypt..."
-docker compose run --rm certbot certonly \
+docker compose run --rm --entrypoint "" certbot sh -c "certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $EMAIL \
     --agree-tos \
     --no-eff-email \
-    -d $DOMAIN
+    -d $DOMAIN"
 
 # Verificar si los certificados se obtuvieron correctamente
 echo "🔍 Verificando certificados..."
 sleep 2
 
-if docker compose exec -T certbot test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
+# Verificar en el volumen compartido (nginx también tiene acceso)
+if docker compose exec -T nginx test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
     echo "✅ Certificados obtenidos exitosamente"
     
     # Recargar nginx con la configuración SSL completa
