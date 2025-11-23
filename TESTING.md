@@ -85,8 +85,8 @@ curl -X POST https://app.vicevalds.dev/api/agent/process-audio \
 **Causa:** Formato de audio incorrecto o campo incorrecto
 
 **Solución:** Verificar que:
-- El campo se llama `audio`
-- El formato es webm
+- El campo se llama `file` (requerido por vicevalds)
+- El formato es WebM u otro formato soportado
 - El archivo no está vacío
 
 ### Error: Status 500
@@ -102,9 +102,9 @@ Crear un archivo de audio de prueba y enviarlo:
 # Grabar audio de prueba (5 segundos)
 ffmpeg -f pulse -i default -t 5 -acodec libopus test.webm
 
-# Enviar al servidor vicevalds
+# Enviar al servidor vicevalds (IMPORTANTE: usar campo 'file')
 curl -X POST https://app.vicevalds.dev/api/agent/process-audio \
-  -F "audio=@test.webm" \
+  -F "file=@test.webm" \
   -v
 ```
 

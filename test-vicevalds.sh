@@ -58,13 +58,13 @@ echo ""
 echo "3️⃣  Enviando audio al servidor vicevalds..."
 echo "   URL: https://app.vicevalds.dev/api/agent/process-audio"
 echo "   Método: POST"
-echo "   Campo: audio"
+echo "   Campo: file (requerido por vicevalds)"
 echo ""
 
-# Enviar el archivo con curl
+# Enviar el archivo con curl - IMPORTANTE: usar 'file' como campo
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
   https://app.vicevalds.dev/api/agent/process-audio \
-  -F "audio=@$TEST_FILE" \
+  -F "file=@$TEST_FILE" \
   2>&1)
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -103,8 +103,8 @@ elif [ "$HTTP_CODE" = "400" ] || [ "$HTTP_CODE" = "422" ]; then
     echo "⚠️  ERROR DE VALIDACIÓN ($HTTP_CODE)"
     echo ""
     echo "El servidor rechazó el audio. Posibles causas:"
-    echo "  • Formato incorrecto"
-    echo "  • Campo incorrecto (debe ser 'audio')"
+    echo "  • Formato incorrecto (debe ser MP3 o WebM)"
+    echo "  • Campo incorrecto (debe ser 'file')"
     echo "  • Validación fallida"
 elif [ "$HTTP_CODE" = "500" ] || [ "$HTTP_CODE" = "502" ] || [ "$HTTP_CODE" = "503" ]; then
     echo "❌ ERROR DEL SERVIDOR ($HTTP_CODE)"

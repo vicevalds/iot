@@ -27,10 +27,11 @@ function App() {
     console.log('═══════════════════════════════════════════════════');
 
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
+    // IMPORTANTE: El servidor vicevalds espera el campo 'file' (no 'audio')
+    formData.append('file', audioBlob, 'recording.webm');
 
     console.log('📦 [App] FormData creado:');
-    console.log('   └─ Clave: "audio"');
+    console.log('   └─ Clave: "file" (campo requerido por vicevalds)');
     console.log('   └─ Nombre archivo: "recording.webm"');
     console.log('   └─ Tamaño: ' + audioBlob.size + ' bytes (' + (audioBlob.size / 1024).toFixed(2) + ' KB)');
     console.log('   └─ Tipo MIME: ' + audioBlob.type);

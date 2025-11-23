@@ -25,10 +25,16 @@ export default function RecordButton({ onRecordingComplete }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log('✅ [RecordButton] Acceso al micrófono concedido');
 
+      // Intentar usar audio/webm;codecs=opus (mejor compatibilidad)
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm';
+      }
+
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
+        mimeType: mimeType,
       });
-      console.log('📹 [RecordButton] MediaRecorder creado con formato audio/webm');
+      console.log(`📹 [RecordButton] MediaRecorder creado con formato ${mimeType}`);
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];

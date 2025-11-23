@@ -106,10 +106,11 @@ function playAudio(audioBuffer, mimetype) {
 // Endpoint POST para recibir y reproducir audio en los parlantes del servidor
 // Este endpoint está en escucha constante para recibir audio desde el frontend
 // Flujo completo:
-// 1. Frontend graba audio y lo envía a vicevalds (https://app.vicevalds.dev/api/agent/process-audio)
+// 1. Frontend graba audio y lo envía a vicevalds con campo 'file' (https://app.vicevalds.dev/api/agent/process-audio)
 // 2. Vicevalds procesa el audio y devuelve un audio de respuesta
 // 3. Frontend descarga el audio de respuesta de vicevalds
 // 4. Frontend envía el audio a este endpoint para reproducirlo en los parlantes
+// NOTA: Este endpoint local acepta 'audio' como campo para mantener compatibilidad
 app.post('/api/audio/play', upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) {
