@@ -32,7 +32,7 @@ else
 
     # Reemplazar el dominio en la configuración si es necesario
     # (En caso de que el dominio sea diferente al hardcodeado)
-    sed "s/iot\.vvaldes\.me/$DOMAIN/g" /usr/local/apache2/conf/apache2-full.conf > /tmp/httpd.conf
+    sed "s/iot\.vicevalds\.dev/$DOMAIN/g" /usr/local/apache2/conf/apache2-full.conf > /tmp/httpd.conf
 
     # Verificar que los certificados son válidos
     if openssl x509 -in "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" -noout -checkend 86400 > /dev/null 2>&1; then
