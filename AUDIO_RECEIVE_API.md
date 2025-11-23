@@ -33,7 +33,9 @@ Content-Type: multipart/form-data
 ### Body (form-data)
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `file` | File | ✅ Sí | Archivo de audio (webm, mp3, wav, ogg) |
+| `file` (o cualquier nombre) | File | ✅ Sí | Archivo de audio (webm, mp3, wav, ogg) |
+
+**Nota:** Este endpoint acepta cualquier nombre de campo (`file`, `audio`, `recording`, etc.). Es flexible y no requiere un nombre específico.
 
 ### Límites
 - **Tamaño máximo:** 5 MB
@@ -45,8 +47,18 @@ Content-Type: multipart/form-data
 
 ### cURL
 ```bash
+# Con campo 'file' (recomendado)
 curl -X POST \
   -F "file=@audio.webm" \
+  http://localhost:3000/api/audio/receive
+
+# O con cualquier otro nombre de campo
+curl -X POST \
+  -F "audio=@audio.webm" \
+  http://localhost:3000/api/audio/receive
+
+curl -X POST \
+  -F "recording=@audio.webm" \
   http://localhost:3000/api/audio/receive
 ```
 
@@ -104,6 +116,7 @@ console.log(response.data);
   "audio": {
     "filename": "received-1732374620000.webm",
     "originalName": "audio.webm",
+    "fieldName": "file",
     "size": 45678,
     "sizeKB": "44.61",
     "mimetype": "audio/webm",
@@ -121,6 +134,7 @@ console.log(response.data);
 | `message` | String | Mensaje descriptivo del resultado |
 | `audio.filename` | String | Nombre del archivo guardado en el servidor |
 | `audio.originalName` | String | Nombre original del archivo subido |
+| `audio.fieldName` | String | Nombre del campo usado en la petición (ej: 'file', 'audio') |
 | `audio.size` | Number | Tamaño del archivo en bytes |
 | `audio.sizeKB` | String | Tamaño del archivo en KB (formateado) |
 | `audio.mimetype` | String | Tipo MIME del archivo |
@@ -135,7 +149,8 @@ console.log(response.data);
 ```json
 {
   "success": false,
-  "error": "No audio file uploaded"
+  "error": "No audio file uploaded",
+  "hint": "Accepted field names: file, audio, recording, or any other"
 }
 ```
 
@@ -226,9 +241,9 @@ Los archivos de audio se guardan en:
 
 | Endpoint | Propósito | Almacenamiento | Campo |
 |----------|-----------|----------------|-------|
-| `/api/audio/receive` | Recibir audios externos | Permanente | `file` |
-| `/api/audio/play` | Reproducir desde frontend | Temporal (memoria) | `audio` |
-| `/api/agent/process-audio` | Proxy a vicevalds | Temporal (memoria) | `audio` |
+| `/api/audio/receive` | Recibir audios externos | Permanente | `cualquiera` (flexible) |
+| `/api/audio/play` | Reproducir desde frontend | Temporal (memoria) | `audio` (fijo) |
+| `/api/agent/process-audio` | Proxy a vicevalds | Temporal (memoria) | `audio` (fijo) |
 
 ---
 
@@ -264,8 +279,9 @@ curl -X POST -F "file=@alarm.mp3" http://device:3000/api/audio/receive
 - Confirma que el formato de audio sea compatible
 
 ### Error 400: No audio file uploaded
-- Asegúrate de usar el campo `file` (no `audio`)
-- Verifica que estás enviando multipart/form-data
+- Verifica que estás enviando un archivo (cualquier nombre de campo es aceptado)
+- Confirma que estás usando multipart/form-data
+- Asegúrate de que el archivo no está vacío
 
 ### Error 500: Error processing audio file
 - Revisa los logs del servidor para detalles

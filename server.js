@@ -5,9 +5,20 @@ const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
 const axios = require('axios');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Crear servidor HTTP para Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Directorio para almacenar audios recibidos
 const uploadsAudioDir = path.join(__dirname, 'uploads', 'audio');
@@ -39,6 +50,15 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Socket.io - Manejo de conexiones
+io.on('connection', (socket) => {
+  console.log('🔌 Cliente conectado via Socket.io:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Cliente desconectado:', socket.id);
+  });
+});
 
 // Función para reproducir audio en Linux
 function playAudio(audioBuffer, mimetype) {
@@ -261,37 +281,44 @@ app.post('/api/audio/play', upload.single('audio'), async (req, res) => {
 // Este endpoint está diseñado para recibir audios de cualquier fuente externa
 // Basado en la implementación robusta de recepción de audio
 // Flujo:
-// 1. Recibe audio mediante POST con campo 'file'
+// 1. Recibe audio mediante POST con campo 'file', 'audio', 'recording' o cualquier otro
 // 2. Valida y guarda el archivo permanentemente
 // 3. Reproduce el audio en los parlantes del dispositivo
 // 4. Retorna confirmación con detalles del audio
-app.post('/api/audio/receive', uploadReceiveAudio.single('file'), async (req, res) => {
+app.post('/api/audio/receive', uploadReceiveAudio.any(), async (req, res) => {
   try {
     console.log('');
     console.log('═══════════════════════════════════════════════════════════════');
     console.log('🎧 RECIBIENDO AUDIO EXTERNO PARA REPRODUCCIÓN');
     console.log('═══════════════════════════════════════════════════════════════');
 
+    // Multer.any() pone los archivos en req.files (array), no en req.file
+    const uploadedFile = req.files && req.files.length > 0 ? req.files[0] : null;
+
     // Validar que se recibió un archivo
-    if (!req.file) {
+    if (!uploadedFile) {
       console.log('[AUDIO RECEIVE] ❌ Solicitud rechazada: No se subió ningún archivo');
+      console.log('[AUDIO RECEIVE] ℹ️  Campos aceptados: file, audio, recording, o cualquier nombre');
       console.log('═══════════════════════════════════════════════════════════════');
       console.log('');
       return res.status(400).json({
         success: false,
-        error: 'No audio file uploaded'
+        error: 'No audio file uploaded',
+        hint: 'Accepted field names: file, audio, recording, or any other'
       });
     }
 
+    console.log('[AUDIO RECEIVE] ℹ️  Campo recibido:', uploadedFile.fieldname);
+
     // Logging de recepción (siguiendo el patrón de referencia)
     console.log('[AUDIO RECEIVE] 🎤 Audio recibido exitosamente');
-    console.log('  ├─ Nombre original:', req.file.originalname);
-    console.log('  ├─ Tamaño:', (req.file.size / 1024).toFixed(2), 'KB');
-    console.log('  ├─ Tipo MIME:', req.file.mimetype);
+    console.log('  ├─ Nombre original:', uploadedFile.originalname);
+    console.log('  ├─ Tamaño:', (uploadedFile.size / 1024).toFixed(2), 'KB');
+    console.log('  ├─ Tipo MIME:', uploadedFile.mimetype);
     console.log('  └─ Timestamp:', new Date().toISOString());
 
     // Guardado permanente con nombre único
-    const ext = path.extname(req.file.originalname) || '.webm';
+    const ext = path.extname(uploadedFile.originalname) || '.webm';
     const audioFilename = `received-${Date.now()}${ext}`;
     const audioPath = path.join(uploadsAudioDir, audioFilename);
 
@@ -301,7 +328,7 @@ app.post('/api/audio/receive', uploadReceiveAudio.single('file'), async (req, re
     console.log('  └─ Ruta:', audioPath);
 
     // Mover archivo temporal a ubicación permanente
-    fs.renameSync(req.file.path, audioPath);
+    fs.renameSync(uploadedFile.path, audioPath);
     const audioUrl = `/uploads/audio/${audioFilename}`;
 
     console.log('[AUDIO RECEIVE] ✅ Archivo guardado exitosamente');
@@ -309,14 +336,24 @@ app.post('/api/audio/receive', uploadReceiveAudio.single('file'), async (req, re
 
     // Leer el archivo guardado para reproducción
     console.log('');
-    console.log('[AUDIO RECEIVE] 🔊 Reproduciendo audio en parlantes');
+    console.log('[AUDIO RECEIVE] 🔊 Reproduciendo audio en parlantes del servidor');
     const audioBuffer = fs.readFileSync(audioPath);
-    const mimetype = req.file.mimetype;
+    const mimetype = uploadedFile.mimetype;
 
-    // Reproducir audio
+    // Reproducir audio en los parlantes del servidor
     await playAudio(audioBuffer, mimetype);
 
-    console.log('[AUDIO RECEIVE] ✅ Audio reproducido exitosamente');
+    console.log('[AUDIO RECEIVE] ✅ Audio reproducido en parlantes del servidor');
+
+    // Emitir evento a todos los clientes web conectados para reproducir en navegador
+    console.log('[AUDIO RECEIVE] 📡 Emitiendo audio a clientes web conectados');
+    io.emit('new-audio', {
+      audioUrl: audioUrl,
+      filename: audioFilename,
+      originalName: uploadedFile.originalname,
+      timestamp: new Date().toISOString()
+    });
+    console.log('[AUDIO RECEIVE] ✅ Evento emitido a clientes web');
     console.log('═══════════════════════════════════════════════════════════════');
     console.log('');
 
@@ -326,9 +363,10 @@ app.post('/api/audio/receive', uploadReceiveAudio.single('file'), async (req, re
       message: 'Audio received and played successfully',
       audio: {
         filename: audioFilename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        sizeKB: (req.file.size / 1024).toFixed(2),
+        originalName: uploadedFile.originalname,
+        fieldName: uploadedFile.fieldname,
+        size: uploadedFile.size,
+        sizeKB: (uploadedFile.size / 1024).toFixed(2),
         mimetype: mimetype,
         url: audioUrl,
         timestamp: new Date().toISOString()
@@ -344,13 +382,17 @@ app.post('/api/audio/receive', uploadReceiveAudio.single('file'), async (req, re
     console.log('');
 
     // Limpiar archivo temporal si existe
-    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-        console.log('[AUDIO RECEIVE] 🧹 Archivo temporal eliminado');
-      } catch (cleanupError) {
-        console.error('[AUDIO RECEIVE] ⚠️  Error al limpiar archivo temporal:', cleanupError.message);
-      }
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        if (file.path && fs.existsSync(file.path)) {
+          try {
+            fs.unlinkSync(file.path);
+            console.log('[AUDIO RECEIVE] 🧹 Archivo temporal eliminado:', file.originalname);
+          } catch (cleanupError) {
+            console.error('[AUDIO RECEIVE] ⚠️  Error al limpiar archivo temporal:', cleanupError.message);
+          }
+        }
+      });
     }
 
     res.status(500).json({
@@ -373,11 +415,12 @@ app.get('*', (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', () => {
   console.log('═══════════════════════════════════════════════════');
   console.log('🚀 Servidor IoT iniciado correctamente');
   console.log('═══════════════════════════════════════════════════');
   console.log(`🌐 Servidor escuchando en: http://0.0.0.0:${port}`);
+  console.log(`🔌 Socket.io habilitado en: ws://0.0.0.0:${port}`);
   console.log('');
   console.log('📡 Endpoints disponibles:');
   console.log(`  • POST /api/agent/process-audio - Proxy a vicevalds`);
@@ -398,9 +441,11 @@ app.listen(port, '0.0.0.0', () => {
   console.log('    2️⃣  vicevalds → Frontend');
   console.log('    3️⃣  Frontend → Este servidor (reproducir)');
   console.log('');
-  console.log('  Opción 3 (recepción externa):');
+  console.log('  Opción 3 (recepción externa + web):');
   console.log('    1️⃣  Fuente externa → POST /api/audio/receive');
-  console.log('    2️⃣  Audio se guarda y reproduce automáticamente');
+  console.log('    2️⃣  Audio se reproduce en parlantes del servidor');
+  console.log('    3️⃣  Audio se envía via Socket.io a todos los clientes web');
+  console.log('    4️⃣  Clientes web reproducen audio automáticamente');
   console.log('═══════════════════════════════════════════════════');
 });
 

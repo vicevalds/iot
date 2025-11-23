@@ -1,10 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import RecordButton from './components/RecordButton';
+import io from 'socket.io-client';
 
 function App() {
   const [loading, setLoading] = useState(false);
   const [responseAudioUrl, setResponseAudioUrl] = useState(null);
   const [isPlayingResponse, setIsPlayingResponse] = useState(false);
+  const [receivedAudioNotification, setReceivedAudioNotification] = useState(null);
+  const audioRef = useRef(null);
+  const socketRef = useRef(null);
+
+  // Conectar a Socket.io y escuchar audios entrantes
+  useEffect(() => {
+    // Conectar al servidor Socket.io
+    socketRef.current = io(window.location.origin, {
+      transports: ['websocket', 'polling']
+    });
+
+    console.log('🔌 Conectando a Socket.io...');
+
+    socketRef.current.on('connect', () => {
+      console.log('✅ Conectado a Socket.io:', socketRef.current.id);
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('❌ Desconectado de Socket.io');
+    });
+
+    // Escuchar evento de nuevo audio recibido
+    socketRef.current.on('new-audio', (data) => {
+      console.log('');
+      console.log('═══════════════════════════════════════════════════');
+      console.log('🎵 [Socket.io] NUEVO AUDIO RECIBIDO');
+      console.log('═══════════════════════════════════════════════════');
+      console.log('📁 Archivo:', data.originalName);
+      console.log('🔗 URL:', data.audioUrl);
+      console.log('⏰ Timestamp:', data.timestamp);
+      console.log('');
+      console.log('🔊 Reproduciendo audio automáticamente en el navegador...');
+
+      // Mostrar notificación al usuario
+      setReceivedAudioNotification({
+        filename: data.originalName,
+        timestamp: data.timestamp
+      });
+
+      // Ocultar notificación después de 5 segundos
+      setTimeout(() => {
+        setReceivedAudioNotification(null);
+      }, 5000);
+
+      // Reproducir audio automáticamente
+      if (audioRef.current) {
+        audioRef.current.src = data.audioUrl;
+        audioRef.current.play()
+          .then(() => {
+            console.log('✅ Audio reproduciéndose en el navegador');
+            console.log('═══════════════════════════════════════════════════');
+          })
+          .catch((error) => {
+            console.error('❌ Error al reproducir audio:', error);
+            console.log('═══════════════════════════════════════════════════');
+          });
+      }
+    });
+
+    // Cleanup al desmontar
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
 
   const handleRecordingComplete = async (audioBlob) => {
     // Validación adicional de seguridad
@@ -97,6 +164,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray1">
+      {/* Elemento de audio oculto para reproducir audios recibidos */}
+      <audio ref={audioRef} style={{ display: 'none' }} />
+
       {/* Botón fijo en el centro del viewport */}
       <div className="fixed inset-0 flex-center pointer-events-none">
         <div className="pointer-events-auto">
@@ -117,6 +187,20 @@ function App() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           Reproduciendo en parlantes...
+        </div>
+      )}
+
+      {/* Notificación de audio recibido vía Socket.io */}
+      {receivedAudioNotification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 text-center bg-green-900 text-green-100 px-6 py-3 rounded-8 shadow-lg border border-green-500 flex items-center gap-3 animate-pulse">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+          </svg>
+          <div className="text-left">
+            <div className="font-semibold">🎵 Nuevo audio recibido</div>
+            <div className="text-12 text-green-200 mt-1">{receivedAudioNotification.filename}</div>
+          </div>
         </div>
       )}
     </div>
