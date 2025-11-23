@@ -41,10 +41,21 @@ export default function RecordButton({ onRecordingComplete }) {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
         console.log('🛑 [RecordButton] Grabación detenida');
         console.log('📊 [RecordButton] Total de chunks:', chunksRef.current.length);
+
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
         console.log('📊 [RecordButton] Tamaño total del Blob:', audioBlob.size, 'bytes');
+
+        // Validar que el Blob tenga contenido
+        if (audioBlob.size === 0 || chunksRef.current.length === 0) {
+          console.warn('⚠️ [RecordButton] Blob vacío - grabación demasiado corta');
+          alert('La grabación es demasiado corta. Mantén presionado el botón por al menos 1 segundo.');
+          stream.getTracks().forEach((track) => track.stop());
+          console.log('🔇 [RecordButton] Micrófono desactivado');
+          return;
+        }
+
         console.log('🔄 [RecordButton] Llamando a onRecordingComplete...');
         onRecordingComplete(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
