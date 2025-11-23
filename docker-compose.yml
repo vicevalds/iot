@@ -33,13 +33,9 @@ services:
     container_name: iot-apache2
     ports:
       - "80:80"
-      - "443:443"
     volumes:
-      - ./apache2/apache2.conf:/usr/local/apache2/conf/apache2-full.conf:ro
-      - ./apache2/apache2-init.conf:/usr/local/apache2/conf/apache2-init.conf:ro
+      - ./apache2/apache2.conf:/usr/local/apache2/conf/httpd.conf:ro
       - ./apache2/entrypoint.sh:/docker-entrypoint.sh:ro
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
     networks:
       - iot-network
     restart: unless-stopped
@@ -53,24 +49,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  certbot:
-    image: certbot/certbot
-    container_name: iot-certbot
-    volumes:
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
-    networks:
-      - iot-network
-    # Renovación automática: verifica cada 12 horas y renueva si es necesario
-    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot --webroot-path=/var/www/certbot --quiet && echo "Certificado renovado:$$(date)"; sleep 12h & wait $${!}; done;'
-    restart: unless-stopped
-    # Healthcheck para verificar que certbot está funcionando
-    healthcheck:
-      test: ["CMD", "test", "-d", "/etc/letsencrypt/live"]
-      interval: 1h
-      timeout: 10s
-      retries: 3
 
 networks:
   iot-network:
