@@ -21,9 +21,13 @@ RUN pnpm run build
 # Stage 2: Production image
 FROM node:20-slim
 
-# Instalar dependencias del sistema para reproducir audio y herramientas
+# Instalar dependencias del sistema para el endpoint /api/audio/play
+# - pulseaudio (paplay): reproduce archivos WAV directamente
+# - ffmpeg (ffplay): reproduce webm, mp3, ogg y otros formatos multimedia
+# - curl: para healthchecks
 RUN apt-get update && apt-get install -y \
     pulseaudio \
+    pulseaudio-utils \
     ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -34,6 +38,7 @@ RUN npm install -g pnpm@10.13.1
 WORKDIR /app
 
 # Copiar package.json y instalar solo dependencias de producción
+# Dependencias del endpoint /api/audio/play: express (servidor), multer (upload de archivos)
 COPY package.json ./
 RUN pnpm install --prod --frozen-lockfile || pnpm install --prod
 
@@ -43,13 +48,15 @@ COPY server.js ./
 # Copiar archivos construidos del frontend desde el builder
 COPY --from=builder /app/dist ./dist
 
-# Crear directorio para archivos temporales de audio
+# Crear directorio para archivos temporales de audio del endpoint /api/audio/play
+# El endpoint guarda archivos temporalmente antes de reproducirlos
 RUN mkdir -p temp && chmod 777 temp
 
 # Exponer puerto
 EXPOSE 3000
 
-# Variable de entorno para PulseAudio
+# Variable de entorno para PulseAudio (requerida por el endpoint /api/audio/play)
+# Permite que paplay y ffplay se conecten al servidor PulseAudio del host
 ENV PULSE_SERVER=unix:/run/user/1000/pulse/native
 
 # Comando para iniciar el servidor

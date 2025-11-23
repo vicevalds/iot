@@ -1,6 +1,13 @@
-# Guía de Deploy - Aplicación IoT
+# Guía de Deploy - Aplicación IoT de Audio
 
-Esta guía te ayudará a desplegar tu aplicación IoT en un servidor.
+Esta guía te ayudará a desplegar tu aplicación IoT que permite grabar audio desde el navegador y reproducirlo en el parlante del servidor.
+
+## Características
+
+- **Grabación de audio**: Mantén presionado el botón para grabar
+- **Reproducción en servidor**: El audio se reproduce en el parlante del servidor Linux
+- **Soporte de formatos**: WebM, MP3, WAV, OGG
+- **Logs detallados**: Seguimiento completo del proceso de grabación y envío
 
 ## Requisitos Previos
 
@@ -176,6 +183,31 @@ O si configuraste un dominio:
 ```
 http://tu-dominio.com
 ```
+
+### Usar la Aplicación
+
+1. **Grabar Audio**:
+   - Mantén presionado el botón del micrófono
+   - Habla durante al menos 1 segundo
+   - Suelta el botón para enviar
+
+2. **Proceso Automático**:
+   - El audio se envía al endpoint `/api/audio/play`
+   - El servidor lo guarda temporalmente
+   - Se reproduce en el parlante del servidor
+   - El archivo temporal se elimina automáticamente
+
+3. **Ver Logs**:
+   - Abre la consola del navegador (F12) para ver logs detallados
+   - Los logs muestran: tamaño del audio, formato, estado del envío, etc.
+
+### Endpoints Disponibles
+
+- `GET /` - Interfaz web de la aplicación
+- `POST /api/audio/play` - Recibe y reproduce audio
+  - Campo: `audio` (archivo)
+  - Formatos: WebM, MP3, WAV, OGG
+  - Respuesta: `{ success: true, message: "...", filename: "...", size: ..., mimetype: "..." }`
 
 ## Comandos Útiles
 

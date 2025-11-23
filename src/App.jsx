@@ -27,24 +27,22 @@ function App() {
     console.log('═══════════════════════════════════════════════════');
 
     const formData = new FormData();
-    // Usar 'file' como clave para coincidir con el endpoint del servidor
-    // NOTA: El servidor puede requerir MP3. Si WebM no funciona, necesitaremos
-    // implementar conversión usando ffmpeg.wasm o enviar al servidor para conversión.
-    formData.append('file', audioBlob, 'recording.webm');
+    // Usar 'audio' como clave para el endpoint local /api/audio/play
+    formData.append('audio', audioBlob, 'recording.webm');
 
     console.log('📦 [App] FormData creado:');
-    console.log('   └─ Clave: "file"');
+    console.log('   └─ Clave: "audio"');
     console.log('   └─ Nombre archivo: "recording.webm"');
     console.log('   └─ Tamaño: ' + audioBlob.size + ' bytes (' + (audioBlob.size / 1024).toFixed(2) + ' KB)');
     console.log('   └─ Tipo MIME: ' + audioBlob.type);
     console.log('');
     console.log('🚀 [App] Enviando petición HTTP POST...');
-    console.log('🌐 [App] Endpoint: https://app.vicevalds.dev/api/agent/process-audio');
+    console.log('🌐 [App] Endpoint: /api/audio/play (servidor local)');
     console.log('📤 [App] Content-Type: multipart/form-data');
     console.log('⏳ [App] Esperando respuesta del servidor...');
 
     try {
-      const response = await fetch('https://app.vicevalds.dev/api/agent/process-audio', {
+      const response = await fetch('/api/audio/play', {
         method: 'POST',
         body: formData,
       });
@@ -62,13 +60,20 @@ function App() {
         const data = await response.json();
         console.log('📊 [App] Datos recibidos:', data);
         console.log('   ├─ Keys:', Object.keys(data).join(', '));
-        if (data.response_audio_url) {
-          console.log('   └─ Audio de respuesta: ✓ Disponible');
-        } else {
-          console.log('   └─ Audio de respuesta: ✗ No disponible');
+        console.log('   ├─ Success:', data.success);
+        console.log('   └─ Message:', data.message);
+
+        // Si el servidor indica que se reprodujo exitosamente
+        if (data.success) {
+          console.log('');
+          console.log('🔊 [App] Audio reproducido en el parlante del servidor');
+          console.log('   ├─ Archivo:', data.filename);
+          console.log('   ├─ Tamaño:', data.size, 'bytes');
+          console.log('   └─ Tipo MIME:', data.mimetype);
+          console.log('═══════════════════════════════════════════════════');
         }
 
-        // Manejar el audio de respuesta si existe
+        // Manejar el audio de respuesta si existe (para compatibilidad con endpoint externo)
         if (data.response_audio_url) {
           console.log('');
           console.log('───────────────────────────────────────────────────');

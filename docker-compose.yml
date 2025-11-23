@@ -9,14 +9,18 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      # Variables para PulseAudio (ajustar PULSE_SERVER según tu usuario)
+      # Variable requerida por el endpoint /api/audio/play para reproducir audio
+      # Conecta paplay y ffplay al servidor PulseAudio del host
+      # Ajustar PULSE_SERVER según tu UID (ejecuta: id -u)
       - PULSE_SERVER=unix:/run/user/1000/pulse/native
     volumes:
-      # Montar el socket de PulseAudio del host para reproducir audio
-      # Nota: Cambia 1000 por tu UID si es diferente (ejecuta: id -u para ver tu UID)
+      # Socket de PulseAudio del host (requerido por /api/audio/play)
+      # Permite reproducir audio en el sistema host desde el contenedor
+      # Nota: Cambia 1000 por tu UID si es diferente (ejecuta: id -u)
       - /run/user/1000/pulse:/run/user/1000/pulse:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
-      # Montar directorio temporal para archivos de audio
+      # Directorio temporal para archivos de audio del endpoint /api/audio/play
+      # El endpoint guarda archivos temporalmente antes de reproducirlos
       - ./temp:/app/temp
     networks:
       - iot-network
