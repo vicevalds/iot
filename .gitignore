@@ -16,6 +16,9 @@ temp/
 *.log
 .DS_Store
 
+# Uploaded audio files
+uploads/
+
 # IDE
 .vscode
 .idea
