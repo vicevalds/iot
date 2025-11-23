@@ -19,30 +19,42 @@ export default function RecordButton({ onRecordingComplete }) {
   const progress = useMotionValue(0);
 
   const startRecording = async () => {
+    console.log('🎙️ [RecordButton] Iniciando grabación...');
     try {
+      console.log('🎤 [RecordButton] Solicitando acceso al micrófono...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('✅ [RecordButton] Acceso al micrófono concedido');
+
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm',
       });
+      console.log('📹 [RecordButton] MediaRecorder creado con formato audio/webm');
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log('📦 [RecordButton] Chunk de audio recibido:', event.data.size, 'bytes');
           chunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        console.log('🛑 [RecordButton] Grabación detenida');
+        console.log('📊 [RecordButton] Total de chunks:', chunksRef.current.length);
+        console.log('📊 [RecordButton] Tamaño total del Blob:', audioBlob.size, 'bytes');
+        console.log('🔄 [RecordButton] Llamando a onRecordingComplete...');
         onRecordingComplete(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
+        console.log('🔇 [RecordButton] Micrófono desactivado');
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
+      console.log('▶️ [RecordButton] Grabación en curso...');
 
       // Animar el progreso circular
       animationRef.current = animate(progress, 100, {
@@ -58,16 +70,19 @@ export default function RecordButton({ onRecordingComplete }) {
 
       // Timer de seguridad
       timerRef.current = setTimeout(() => {
+        console.log('⏱️ [RecordButton] Tiempo máximo alcanzado (60s)');
         stopRecording();
       }, MAX_DURATION);
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error('❌ [RecordButton] Error al acceder al micrófono:', error);
+      console.error('📊 [RecordButton] Detalles:', error.message);
       alert('No se pudo acceder al micrófono. Por favor, permite el acceso.');
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      console.log('⏹️ [RecordButton] Deteniendo grabación...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
 
@@ -89,22 +104,26 @@ export default function RecordButton({ onRecordingComplete }) {
       });
 
       setRecordingTime(0);
+      console.log('✅ [RecordButton] Grabación detenida correctamente');
     }
   };
 
   const handlePointerDown = () => {
+    console.log('👆 [RecordButton] Botón presionado');
     if (!isRecording) {
       startRecording();
     }
   };
 
   const handlePointerUp = () => {
+    console.log('👆 [RecordButton] Botón liberado');
     if (isRecording) {
       stopRecording();
     }
   };
 
   const handleMouseLeave = () => {
+    console.log('🖱️ [RecordButton] Mouse salió del botón');
     if (isRecording) {
       stopRecording();
     }

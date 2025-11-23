@@ -6,9 +6,16 @@ function App() {
   const [serverLog, setServerLog] = useState(null);
 
   const handleRecordingComplete = async (audioBlob) => {
+    console.log('📼 [App] Grabación completada');
+    console.log('📊 [App] Tamaño del audio:', audioBlob.size, 'bytes');
+    console.log('📊 [App] Tipo MIME:', audioBlob.type);
+
     setLoading(true);
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
+
+    console.log('🚀 [App] Enviando audio al servidor...');
+    console.log('🌐 [App] Endpoint:', 'https://app.vicevalds.dev/api/agent/process-audio');
 
     try {
       const response = await fetch('https://app.vicevalds.dev/api/agent/process-audio', {
@@ -16,9 +23,13 @@ function App() {
         body: formData,
       });
 
+      console.log('📡 [App] Respuesta recibida');
+      console.log('📊 [App] Status:', response.status, response.statusText);
+
       if (response.ok) {
         const data = await response.json();
-        
+        console.log('✅ [App] Respuesta exitosa del servidor:', data);
+
         setServerLog({
           timestamp: new Date().toISOString(),
           response: {
@@ -29,6 +40,9 @@ function App() {
           },
         });
       } else {
+        console.warn('⚠️ [App] Respuesta no exitosa del servidor');
+        console.warn('📊 [App] Status:', response.status, response.statusText);
+
         setServerLog({
           timestamp: new Date().toISOString(),
           response: {
@@ -39,7 +53,9 @@ function App() {
         });
       }
     } catch (error) {
-      console.error('Error uploading recording:', error);
+      console.error('❌ [App] Error al subir la grabación:', error);
+      console.error('📊 [App] Detalles del error:', error.message);
+
       setServerLog({
         timestamp: new Date().toISOString(),
         response: {
@@ -48,6 +64,7 @@ function App() {
         },
       });
     } finally {
+      console.log('🏁 [App] Proceso finalizado');
       setLoading(false);
     }
   };
