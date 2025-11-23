@@ -38,8 +38,8 @@ services:
       - ./apache2/apache2.conf:/usr/local/apache2/conf/apache2-full.conf:ro
       - ./apache2/apache2-init.conf:/usr/local/apache2/conf/apache2-init.conf:ro
       - ./apache2/entrypoint.sh:/docker-entrypoint.sh:ro
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     networks:
       - iot-network
     restart: unless-stopped
@@ -58,8 +58,8 @@ services:
     image: certbot/certbot
     container_name: iot-certbot
     volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     networks:
       - iot-network
     # Renovación automática: verifica cada 12 horas y renueva si es necesario
@@ -71,10 +71,6 @@ services:
       interval: 1h
       timeout: 10s
       retries: 3
-
-volumes:
-  certbot-www:
-  certbot-conf:
 
 networks:
   iot-network:
