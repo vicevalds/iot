@@ -103,7 +103,13 @@ function playAudio(audioBuffer, mimetype) {
   });
 }
 
-// Endpoint POST para recibir y reproducir audio
+// Endpoint POST para recibir y reproducir audio en los parlantes del servidor
+// Este endpoint está en escucha constante para recibir audio desde el frontend
+// Flujo completo:
+// 1. Frontend graba audio y lo envía a vicevalds (https://app.vicevalds.dev/api/audio)
+// 2. Vicevalds procesa el audio y devuelve un audio de respuesta
+// 3. Frontend descarga el audio de respuesta de vicevalds
+// 4. Frontend envía el audio a este endpoint para reproducirlo en los parlantes
 app.post('/api/audio/play', upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) {
@@ -151,7 +157,16 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor escuchando en http://0.0.0.0:${port}`);
-  console.log(`Endpoint para reproducir audio: POST http://0.0.0.0:${port}/api/audio/play`);
+  console.log('═══════════════════════════════════════════════════');
+  console.log('🚀 Servidor IoT iniciado correctamente');
+  console.log('═══════════════════════════════════════════════════');
+  console.log(`🌐 Servidor escuchando en: http://0.0.0.0:${port}`);
+  console.log(`🔊 Endpoint de audio en escucha: POST http://0.0.0.0:${port}/api/audio/play`);
+  console.log('');
+  console.log('Flujo de audio:');
+  console.log('  1️⃣  Frontend → vicevalds (enviar audio grabado)');
+  console.log('  2️⃣  vicevalds → Frontend (recibir audio procesado)');
+  console.log('  3️⃣  Frontend → Este servidor (reproducir en parlantes)');
+  console.log('═══════════════════════════════════════════════════');
 });
 

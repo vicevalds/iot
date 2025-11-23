@@ -23,11 +23,10 @@ function App() {
 
     console.log('');
     console.log('═══════════════════════════════════════════════════');
-    console.log('🎙️ [App] INICIANDO ENVÍO DE AUDIO');
+    console.log('🎙️ [App] INICIANDO ENVÍO DE AUDIO AL SERVIDOR VICEVALDS');
     console.log('═══════════════════════════════════════════════════');
 
     const formData = new FormData();
-    // Usar 'audio' como clave para el endpoint local /api/audio/play
     formData.append('audio', audioBlob, 'recording.webm');
 
     console.log('📦 [App] FormData creado:');
@@ -37,12 +36,13 @@ function App() {
     console.log('   └─ Tipo MIME: ' + audioBlob.type);
     console.log('');
     console.log('🚀 [App] Enviando petición HTTP POST...');
-    console.log('🌐 [App] Endpoint: /api/audio/play (servidor local)');
+    console.log('🌐 [App] Endpoint: https://app.vicevalds.dev/api/audio (servidor vicevalds)');
     console.log('📤 [App] Content-Type: multipart/form-data');
     console.log('⏳ [App] Esperando respuesta del servidor...');
 
     try {
-      const response = await fetch('/api/audio/play', {
+      // Enviar audio al servidor vicevalds para procesamiento
+      const response = await fetch('https://app.vicevalds.dev/api/audio', {
         method: 'POST',
         body: formData,
       });
@@ -63,21 +63,11 @@ function App() {
         console.log('   ├─ Success:', data.success);
         console.log('   └─ Message:', data.message);
 
-        // Si el servidor indica que se reprodujo exitosamente
-        if (data.success) {
-          console.log('');
-          console.log('🔊 [App] Audio reproducido en el parlante del servidor');
-          console.log('   ├─ Archivo:', data.filename);
-          console.log('   ├─ Tamaño:', data.size, 'bytes');
-          console.log('   └─ Tipo MIME:', data.mimetype);
-          console.log('═══════════════════════════════════════════════════');
-        }
-
-        // Manejar el audio de respuesta si existe (para compatibilidad con endpoint externo)
+        // Manejar el audio de respuesta del servidor vicevalds
         if (data.response_audio_url) {
           console.log('');
           console.log('───────────────────────────────────────────────────');
-          console.log('🎵 [App] PROCESANDO AUDIO DE RESPUESTA');
+          console.log('🎵 [App] PROCESANDO AUDIO DE RESPUESTA DE VICEVALDS');
           console.log('───────────────────────────────────────────────────');
 
           const fullAudioUrl = `https://app.vicevalds.dev${data.response_audio_url}`;
@@ -85,9 +75,9 @@ function App() {
 
           setResponseAudioUrl(fullAudioUrl);
 
-          // Descargar y reproducir automáticamente
+          // Descargar el audio de respuesta y enviarlo al servidor local para reproducción
           try {
-            console.log('⬇️ [App] Iniciando descarga del audio...');
+            console.log('⬇️ [App] Descargando audio de respuesta de vicevalds...');
             const audioResponse = await fetch(fullAudioUrl);
 
             console.log('📡 [App] Respuesta de descarga:');
@@ -102,50 +92,37 @@ function App() {
               console.log('   ├─ Tamaño: ' + audioBlob.size + ' bytes (' + (audioBlob.size / 1024).toFixed(2) + ' KB)');
               console.log('   └─ Tipo: ' + audioBlob.type);
 
-              // Crear URL local para reproducir
-              const audioUrl = URL.createObjectURL(audioBlob);
-              const audio = new Audio(audioUrl);
+              // Enviar el audio al servidor local para reproducción en los parlantes
+              console.log('');
+              console.log('🔊 [App] Enviando audio al servidor local para reproducción...');
+              const localFormData = new FormData();
+              localFormData.append('audio', audioBlob, 'response.webm');
 
-              console.log('🔊 [App] Objeto Audio creado');
-              console.log('   └─ Iniciando reproducción...');
+              setIsPlayingResponse(true);
 
-              audio.onloadedmetadata = () => {
-                console.log('📊 [App] Metadata del audio cargada:');
-                console.log('   ├─ Duración: ' + audio.duration.toFixed(2) + ' segundos');
-                console.log('   └─ Ready State: ' + audio.readyState);
-              };
-
-              audio.onplay = () => {
-                console.log('');
-                console.log('▶️ [App] ¡Reproducción iniciada!');
-                setIsPlayingResponse(true);
-              };
-
-              audio.onended = () => {
-                console.log('⏹️ [App] Reproducción finalizada');
-                console.log('🧹 [App] Liberando recursos...');
-                setIsPlayingResponse(false);
-                URL.revokeObjectURL(audioUrl);
-                console.log('✅ [App] Recursos liberados');
-                console.log('═══════════════════════════════════════════════════');
-              };
-
-              audio.onerror = (e) => {
-                console.error('');
-                console.error('❌ [App] Error durante la reproducción');
-                console.error('   ├─ Error:', e);
-                console.error('   └─ Audio error code:', audio.error ? audio.error.code : 'unknown');
-                setIsPlayingResponse(false);
-                URL.revokeObjectURL(audioUrl);
-                console.log('═══════════════════════════════════════════════════');
-              };
-
-              audio.play().catch(err => {
-                console.error('❌ [App] Error al iniciar reproducción:', err);
+              const localResponse = await fetch('/api/audio/play', {
+                method: 'POST',
+                body: localFormData,
               });
+
+              console.log('📡 [App] Respuesta del servidor local:');
+              console.log('   ├─ Status: ' + localResponse.status + ' ' + localResponse.statusText);
+
+              if (localResponse.ok) {
+                const localData = await localResponse.json();
+                console.log('✅ [App] Audio reproducido exitosamente en los parlantes del servidor');
+                console.log('   ├─ Mensaje:', localData.message);
+                console.log('   └─ Detalles:', localData);
+                console.log('═══════════════════════════════════════════════════');
+              } else {
+                console.error('❌ [App] Error al reproducir audio en el servidor local');
+                console.error('   └─ Status:', localResponse.status);
+              }
+
+              setIsPlayingResponse(false);
             } else {
               console.error('');
-              console.error('❌ [App] Error al descargar audio');
+              console.error('❌ [App] Error al descargar audio de vicevalds');
               console.error('   ├─ Status: ' + audioResponse.status);
               console.error('   └─ Status Text: ' + audioResponse.statusText);
               console.log('═══════════════════════════════════════════════════');
@@ -156,6 +133,7 @@ function App() {
             console.error('   ├─ Error:', audioError.message);
             console.error('   └─ Stack:', audioError.stack);
             console.log('═══════════════════════════════════════════════════');
+            setIsPlayingResponse(false);
           }
         }
 
@@ -236,7 +214,7 @@ function App() {
 
       {loading && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 text-center text-gray11 bg-gray3 px-4 py-2 rounded-8 shadow-lg border border-gray5">
-          Subiendo grabación...
+          Enviando a vicevalds...
         </div>
       )}
 
@@ -246,7 +224,7 @@ function App() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Reproduciendo respuesta...
+          Reproduciendo en parlantes...
         </div>
       )}
 
