@@ -3,6 +3,8 @@ const multer = require('multer');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const FormData = require('form-data');
+const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -103,6 +105,71 @@ function playAudio(audioBuffer, mimetype) {
   });
 }
 
+// Endpoint POST para enviar audio al servidor vicevalds y procesar la respuesta
+// Este endpoint actúa como proxy entre el cliente y vicevalds
+// Flujo:
+// 1. Recibe audio desde el cliente (campo 'audio' o 'file')
+// 2. Reenvía el audio a vicevalds (https://app.vicevalds.dev/api/agent/process-audio)
+// 3. Devuelve la respuesta completa de vicevalds al cliente
+app.post('/api/agent/process-audio', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se recibió ningún archivo de audio'
+      });
+    }
+
+    const audioBuffer = req.file.buffer;
+    const mimetype = req.file.mimetype;
+
+    console.log(`Enviando audio a vicevalds: ${req.file.originalname} (${mimetype}, ${audioBuffer.length} bytes)`);
+
+    // Crear FormData para enviar a vicevalds
+    const formData = new FormData();
+    // IMPORTANTE: vicevalds espera el campo 'file'
+    formData.append('file', audioBuffer, {
+      filename: req.file.originalname || 'recording.webm',
+      contentType: mimetype,
+    });
+
+    console.log('Enviando petición a vicevalds...');
+
+    // Enviar a vicevalds
+    const response = await axios.post('https://app.vicevalds.dev/api/agent/process-audio', formData, {
+      headers: formData.getHeaders(),
+      validateStatus: () => true, // No lanzar error en status no-2xx
+    });
+
+    console.log(`Respuesta de vicevalds: ${response.status} ${response.statusText}`);
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
+      console.log('Respuesta exitosa de vicevalds:', JSON.stringify(data, null, 2));
+
+      // Devolver la respuesta completa de vicevalds al cliente
+      res.json(data);
+    } else {
+      const errorText = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+      console.error(`Error de vicevalds (${response.status}):`, errorText);
+
+      res.status(response.status).json({
+        success: false,
+        error: `Error del servidor vicevalds: ${response.statusText}`,
+        details: errorText,
+      });
+    }
+
+  } catch (error) {
+    console.error('Error al comunicarse con vicevalds:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: 'Error al conectar con el servidor vicevalds',
+    });
+  }
+});
+
 // Endpoint POST para recibir y reproducir audio en los parlantes del servidor
 // Este endpoint está en escucha constante para recibir audio desde el frontend
 // Flujo completo:
@@ -162,12 +229,21 @@ app.listen(port, '0.0.0.0', () => {
   console.log('🚀 Servidor IoT iniciado correctamente');
   console.log('═══════════════════════════════════════════════════');
   console.log(`🌐 Servidor escuchando en: http://0.0.0.0:${port}`);
-  console.log(`🔊 Endpoint de audio en escucha: POST http://0.0.0.0:${port}/api/audio/play`);
   console.log('');
-  console.log('Flujo de audio:');
-  console.log('  1️⃣  Frontend → vicevalds (enviar audio grabado)');
-  console.log('  2️⃣  vicevalds → Frontend (recibir audio procesado)');
-  console.log('  3️⃣  Frontend → Este servidor (reproducir en parlantes)');
+  console.log('📡 Endpoints disponibles:');
+  console.log(`  • POST /api/agent/process-audio - Proxy a vicevalds`);
+  console.log(`  • POST /api/audio/play - Reproducir en parlantes`);
+  console.log('');
+  console.log('Flujos disponibles:');
+  console.log('  Opción 1 (con proxy):');
+  console.log('    1️⃣  Cliente → Este servidor → vicevalds');
+  console.log('    2️⃣  vicevalds → Este servidor → Cliente');
+  console.log('    3️⃣  Cliente → Este servidor (reproducir)');
+  console.log('');
+  console.log('  Opción 2 (directo):');
+  console.log('    1️⃣  Frontend → vicevalds (directo)');
+  console.log('    2️⃣  vicevalds → Frontend');
+  console.log('    3️⃣  Frontend → Este servidor (reproducir)');
   console.log('═══════════════════════════════════════════════════');
 });
 
