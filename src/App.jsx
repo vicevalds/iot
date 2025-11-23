@@ -20,15 +20,28 @@ function App() {
     }
 
     setLoading(true);
+
+    console.log('');
+    console.log('═══════════════════════════════════════════════════');
+    console.log('🎙️ [App] INICIANDO ENVÍO DE AUDIO');
+    console.log('═══════════════════════════════════════════════════');
+
     const formData = new FormData();
     // Usar 'file' como clave para coincidir con el endpoint del servidor
     // NOTA: El servidor puede requerir MP3. Si WebM no funciona, necesitaremos
     // implementar conversión usando ffmpeg.wasm o enviar al servidor para conversión.
     formData.append('file', audioBlob, 'recording.webm');
 
-    console.log('🚀 [App] Enviando audio al servidor...');
-    console.log('🌐 [App] Endpoint:', 'https://app.vicevalds.dev/api/agent/process-audio');
-    console.log('📊 [App] Formato de audio:', audioBlob.type);
+    console.log('📦 [App] FormData creado:');
+    console.log('   └─ Clave: "file"');
+    console.log('   └─ Nombre archivo: "recording.webm"');
+    console.log('   └─ Tamaño: ' + audioBlob.size + ' bytes (' + (audioBlob.size / 1024).toFixed(2) + ' KB)');
+    console.log('   └─ Tipo MIME: ' + audioBlob.type);
+    console.log('');
+    console.log('🚀 [App] Enviando petición HTTP POST...');
+    console.log('🌐 [App] Endpoint: https://app.vicevalds.dev/api/agent/process-audio');
+    console.log('📤 [App] Content-Type: multipart/form-data');
+    console.log('⏳ [App] Esperando respuesta del servidor...');
 
     try {
       const response = await fetch('https://app.vicevalds.dev/api/agent/process-audio', {
@@ -36,71 +49,128 @@ function App() {
         body: formData,
       });
 
-      console.log('📡 [App] Respuesta recibida');
-      console.log('📊 [App] Status:', response.status, response.statusText);
+      console.log('');
+      console.log('📡 [App] ¡Respuesta recibida del servidor!');
+      console.log('   ├─ Status Code: ' + response.status);
+      console.log('   ├─ Status Text: ' + response.statusText);
+      console.log('   └─ Headers Content-Type: ' + response.headers.get('content-type'));
 
       if (response.ok) {
+        console.log('');
+        console.log('✅ [App] Respuesta exitosa (2xx)');
+        console.log('📥 [App] Parseando JSON...');
         const data = await response.json();
-        console.log('✅ [App] Respuesta exitosa del servidor:', data);
+        console.log('📊 [App] Datos recibidos:', data);
+        console.log('   ├─ Keys:', Object.keys(data).join(', '));
+        if (data.response_audio_url) {
+          console.log('   └─ Audio de respuesta: ✓ Disponible');
+        } else {
+          console.log('   └─ Audio de respuesta: ✗ No disponible');
+        }
 
         // Manejar el audio de respuesta si existe
         if (data.response_audio_url) {
+          console.log('');
+          console.log('───────────────────────────────────────────────────');
+          console.log('🎵 [App] PROCESANDO AUDIO DE RESPUESTA');
+          console.log('───────────────────────────────────────────────────');
+
           const fullAudioUrl = `https://app.vicevalds.dev${data.response_audio_url}`;
-          console.log('🎵 [App] Audio de respuesta disponible:', fullAudioUrl);
+          console.log('🔗 [App] URL del audio:', fullAudioUrl);
 
           setResponseAudioUrl(fullAudioUrl);
 
           // Descargar y reproducir automáticamente
           try {
-            console.log('⬇️ [App] Descargando audio de respuesta...');
+            console.log('⬇️ [App] Iniciando descarga del audio...');
             const audioResponse = await fetch(fullAudioUrl);
+
+            console.log('📡 [App] Respuesta de descarga:');
+            console.log('   ├─ Status: ' + audioResponse.status + ' ' + audioResponse.statusText);
+            console.log('   ├─ Content-Type: ' + audioResponse.headers.get('content-type'));
+            console.log('   └─ Content-Length: ' + audioResponse.headers.get('content-length') + ' bytes');
 
             if (audioResponse.ok) {
               const audioBlob = await audioResponse.blob();
-              console.log('✅ [App] Audio descargado:', audioBlob.size, 'bytes');
+              console.log('');
+              console.log('✅ [App] Audio descargado exitosamente');
+              console.log('   ├─ Tamaño: ' + audioBlob.size + ' bytes (' + (audioBlob.size / 1024).toFixed(2) + ' KB)');
+              console.log('   └─ Tipo: ' + audioBlob.type);
 
               // Crear URL local para reproducir
               const audioUrl = URL.createObjectURL(audioBlob);
               const audio = new Audio(audioUrl);
 
+              console.log('🔊 [App] Objeto Audio creado');
+              console.log('   └─ Iniciando reproducción...');
+
+              audio.onloadedmetadata = () => {
+                console.log('📊 [App] Metadata del audio cargada:');
+                console.log('   ├─ Duración: ' + audio.duration.toFixed(2) + ' segundos');
+                console.log('   └─ Ready State: ' + audio.readyState);
+              };
+
               audio.onplay = () => {
-                console.log('▶️ [App] Reproduciendo audio de respuesta');
+                console.log('');
+                console.log('▶️ [App] ¡Reproducción iniciada!');
                 setIsPlayingResponse(true);
               };
 
               audio.onended = () => {
-                console.log('⏹️ [App] Audio de respuesta finalizado');
+                console.log('⏹️ [App] Reproducción finalizada');
+                console.log('🧹 [App] Liberando recursos...');
                 setIsPlayingResponse(false);
                 URL.revokeObjectURL(audioUrl);
+                console.log('✅ [App] Recursos liberados');
+                console.log('═══════════════════════════════════════════════════');
               };
 
               audio.onerror = (e) => {
-                console.error('❌ [App] Error al reproducir audio:', e);
+                console.error('');
+                console.error('❌ [App] Error durante la reproducción');
+                console.error('   ├─ Error:', e);
+                console.error('   └─ Audio error code:', audio.error ? audio.error.code : 'unknown');
                 setIsPlayingResponse(false);
                 URL.revokeObjectURL(audioUrl);
+                console.log('═══════════════════════════════════════════════════');
               };
 
-              audio.play();
+              audio.play().catch(err => {
+                console.error('❌ [App] Error al iniciar reproducción:', err);
+              });
             } else {
-              console.error('❌ [App] Error al descargar audio:', audioResponse.status);
+              console.error('');
+              console.error('❌ [App] Error al descargar audio');
+              console.error('   ├─ Status: ' + audioResponse.status);
+              console.error('   └─ Status Text: ' + audioResponse.statusText);
+              console.log('═══════════════════════════════════════════════════');
             }
           } catch (audioError) {
-            console.error('❌ [App] Error procesando audio de respuesta:', audioError);
+            console.error('');
+            console.error('❌ [App] Excepción procesando audio de respuesta');
+            console.error('   ├─ Error:', audioError.message);
+            console.error('   └─ Stack:', audioError.stack);
+            console.log('═══════════════════════════════════════════════════');
           }
         }
 
-        setServerLog({
-          timestamp: new Date().toISOString(),
-          response: {
-            success: true,
-            status: response.status,
-            statusText: response.statusText,
-            body: JSON.stringify(data),
-          },
-        });
+        // Mostrar log en UI después de 2 segundos
+        setTimeout(() => {
+          setServerLog({
+            timestamp: new Date().toISOString(),
+            response: {
+              success: true,
+              status: response.status,
+              statusText: response.statusText,
+              body: JSON.stringify(data),
+            },
+          });
+        }, 2000);
       } else {
+        console.log('');
         console.warn('⚠️ [App] Respuesta no exitosa del servidor');
-        console.warn('📊 [App] Status:', response.status, response.statusText);
+        console.warn('   ├─ Status: ' + response.status);
+        console.warn('   └─ Status Text: ' + response.statusText);
 
         // Intentar leer el cuerpo de la respuesta para obtener más detalles
         let errorBody = '';
@@ -111,29 +181,39 @@ function App() {
           console.warn('⚠️ [App] No se pudo leer el cuerpo de la respuesta');
         }
 
+        console.log('═══════════════════════════════════════════════════');
+
+        // Mostrar log de error en UI después de 2 segundos
+        setTimeout(() => {
+          setServerLog({
+            timestamp: new Date().toISOString(),
+            response: {
+              success: false,
+              status: response.status,
+              statusText: response.statusText,
+              error: errorBody || 'Error desconocido del servidor',
+            },
+          });
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('');
+      console.error('❌ [App] EXCEPCIÓN AL SUBIR LA GRABACIÓN');
+      console.error('   ├─ Nombre: ' + error.name);
+      console.error('   ├─ Mensaje: ' + error.message);
+      console.error('   └─ Stack: ' + error.stack);
+      console.log('═══════════════════════════════════════════════════');
+
+      // Mostrar log de excepción en UI después de 2 segundos
+      setTimeout(() => {
         setServerLog({
           timestamp: new Date().toISOString(),
           response: {
             success: false,
-            status: response.status,
-            statusText: response.statusText,
-            error: errorBody || 'Error desconocido del servidor',
+            error: `${error.name}: ${error.message}`,
           },
         });
-      }
-    } catch (error) {
-      console.error('❌ [App] Error al subir la grabación:', error);
-      console.error('📊 [App] Nombre del error:', error.name);
-      console.error('📊 [App] Mensaje:', error.message);
-      console.error('📊 [App] Stack:', error.stack);
-
-      setServerLog({
-        timestamp: new Date().toISOString(),
-        response: {
-          success: false,
-          error: `${error.name}: ${error.message}`,
-        },
-      });
+      }, 2000);
     } finally {
       console.log('🏁 [App] Proceso finalizado');
       setLoading(false);
