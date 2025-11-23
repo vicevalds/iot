@@ -28,16 +28,16 @@ services:
       retries: 3
       start_period: 40s
 
-  nginx:
-    image: nginx:alpine
-    container_name: iot-nginx
+  apache2:
+    image: httpd:2.4
+    container_name: iot-apache2
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx-full.conf:ro
-      - ./nginx/nginx-init.conf:/etc/nginx/nginx-init.conf:ro
-      - ./nginx/entrypoint.sh:/docker-entrypoint.sh:ro
+      - ./apache2/apache2.conf:/usr/local/apache2/conf/apache2-full.conf:ro
+      - ./apache2/apache2-init.conf:/usr/local/apache2/conf/apache2-init.conf:ro
+      - ./apache2/entrypoint.sh:/docker-entrypoint.sh:ro
       - certbot-www:/var/www/certbot
       - certbot-conf:/etc/letsencrypt
     networks:

@@ -8,7 +8,7 @@ fi
 domains=(iot.vvaldes.me)
 rsa_key_size=4096
 data_path="./certbot"
-email="" # Adding a valid email is recommended
+email="" # Adding a valid email is recommended (IMPORTANTE: Agrega tu email aquí)
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
@@ -18,14 +18,12 @@ if [ -d "$data_path" ]; then
   fi
 fi
 
-
-if [ ! -e "$data_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$data_path/conf/ssl-dhparams.pem" ]; then
-  echo "### Downloading recommended TLS parameters ..."
-  mkdir -p "$data_path/conf"
-  curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "$data_path/conf/options-ssl-nginx.conf"
-  curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "$data_path/conf/ssl-dhparams.pem"
-  echo
-fi
+# Apache2 no necesita archivos de configuración TLS adicionales como nginx
+# Let's Encrypt se integra directamente con Apache2 a través de mod_ssl
+echo "### Preparando directorios para Let's Encrypt ..."
+mkdir -p "$data_path/conf"
+mkdir -p "$data_path/www"
+echo
 
 echo "### Creating dummy certificate for $domains ..."
 path="/etc/letsencrypt/live/$domains"
@@ -38,8 +36,8 @@ docker compose run --rm --entrypoint "\
 echo
 
 
-echo "### Starting nginx ..."
-docker compose up --force-recreate -d nginx
+echo "### Starting apache2 ..."
+docker compose up --force-recreate -d apache2
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
@@ -76,6 +74,6 @@ docker compose run --rm --entrypoint "\
     --force-renewal" certbot
 echo
 
-echo "### Reloading nginx ..."
-docker compose exec nginx nginx -s reload
+echo "### Reloading apache2 ..."
+docker compose restart apache2
 
