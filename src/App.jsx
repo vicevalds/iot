@@ -36,19 +36,22 @@ function App() {
     console.log('   └─ Tipo MIME: ' + audioBlob.type);
     console.log('');
     console.log('🚀 [App] Enviando petición HTTP POST...');
-    console.log('🌐 [App] Endpoint: https://app.vicevalds.dev/api/audio (servidor vicevalds)');
+    console.log('🌐 [App] Endpoint: https://app.vicevalds.dev/api/agent/process-audio (servidor vicevalds)');
     console.log('📤 [App] Content-Type: multipart/form-data');
     console.log('⏳ [App] Esperando respuesta del servidor...');
 
     try {
       // Enviar audio al servidor vicevalds para procesamiento
-      const response = await fetch('https://app.vicevalds.dev/api/audio', {
+      console.log('🔄 [App] Iniciando fetch al servidor vicevalds...');
+
+      const response = await fetch('https://app.vicevalds.dev/api/agent/process-audio', {
         method: 'POST',
         body: formData,
+        // No establecer Content-Type manualmente, el navegador lo hará con boundary
       });
 
       console.log('');
-      console.log('📡 [App] ¡Respuesta recibida del servidor!');
+      console.log('📡 [App] ¡Respuesta recibida del servidor vicevalds!');
       console.log('   ├─ Status Code: ' + response.status);
       console.log('   ├─ Status Text: ' + response.statusText);
       console.log('   └─ Headers Content-Type: ' + response.headers.get('content-type'));
@@ -62,6 +65,9 @@ function App() {
         console.log('   ├─ Keys:', Object.keys(data).join(', '));
         console.log('   ├─ Success:', data.success);
         console.log('   └─ Message:', data.message);
+
+        // Notificar al usuario que se envió correctamente
+        console.log('✅ [App] Audio enviado exitosamente a vicevalds!');
 
         // Manejar el audio de respuesta del servidor vicevalds
         if (data.response_audio_url) {
@@ -114,9 +120,15 @@ function App() {
                 console.log('   ├─ Mensaje:', localData.message);
                 console.log('   └─ Detalles:', localData);
                 console.log('═══════════════════════════════════════════════════');
+
+                // Notificar éxito completo
+                alert('✅ ÉXITO!\n\nEl audio fue:\n1. Enviado a vicevalds ✓\n2. Procesado correctamente ✓\n3. Reproducido en los parlantes ✓');
               } else {
                 console.error('❌ [App] Error al reproducir audio en el servidor local');
                 console.error('   └─ Status:', localResponse.status);
+
+                const errorText = await localResponse.text();
+                alert(`⚠️ Audio procesado por vicevalds pero hubo un error al reproducir:\n\nStatus: ${localResponse.status}\nDetalles: ${errorText}`);
               }
 
               setIsPlayingResponse(false);
@@ -151,7 +163,7 @@ function App() {
         }, 2000);
       } else {
         console.log('');
-        console.warn('⚠️ [App] Respuesta no exitosa del servidor');
+        console.warn('⚠️ [App] Respuesta no exitosa del servidor vicevalds');
         console.warn('   ├─ Status: ' + response.status);
         console.warn('   └─ Status Text: ' + response.statusText);
 
@@ -165,6 +177,9 @@ function App() {
         }
 
         console.log('═══════════════════════════════════════════════════');
+
+        // Alerta al usuario
+        alert(`❌ Error del servidor vicevalds:\n\nStatus: ${response.status} ${response.statusText}\n\nDetalles: ${errorBody || 'Sin detalles adicionales'}\n\nPor favor, verifica que el servidor vicevalds esté funcionando correctamente.`);
 
         // Mostrar log de error en UI después de 2 segundos
         setTimeout(() => {
@@ -181,11 +196,21 @@ function App() {
       }
     } catch (error) {
       console.error('');
-      console.error('❌ [App] EXCEPCIÓN AL SUBIR LA GRABACIÓN');
+      console.error('❌ [App] EXCEPCIÓN AL ENVIAR AL SERVIDOR VICEVALDS');
       console.error('   ├─ Nombre: ' + error.name);
       console.error('   ├─ Mensaje: ' + error.message);
       console.error('   └─ Stack: ' + error.stack);
       console.log('═══════════════════════════════════════════════════');
+
+      // Determinar el tipo de error
+      let errorMessage = '';
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        errorMessage = `❌ ERROR DE CONEXIÓN\n\nNo se pudo conectar al servidor vicevalds.\n\nPosibles causas:\n• El servidor está apagado o no responde\n• Problema de red o firewall\n• URL incorrecta\n• Problema CORS\n\nURL intentada: https://app.vicevalds.dev/api/agent/process-audio\n\nPor favor, verifica que el servidor vicevalds esté funcionando.`;
+      } else {
+        errorMessage = `❌ ERROR AL ENVIAR AUDIO\n\nError: ${error.name}\nMensaje: ${error.message}\n\nPor favor, intenta nuevamente.`;
+      }
+
+      alert(errorMessage);
 
       // Mostrar log de excepción en UI después de 2 segundos
       setTimeout(() => {

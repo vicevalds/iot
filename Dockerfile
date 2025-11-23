@@ -1,6 +1,6 @@
 # Dockerfile para aplicación IoT con reproducción de audio
 # Flujo de audio:
-#   1. Frontend graba audio y lo envía a vicevalds (https://app.vicevalds.dev/api/audio)
+#   1. Frontend graba audio y lo envía a vicevalds (https://app.vicevalds.dev/api/agent/process-audio)
 #   2. Vicevalds procesa el audio y devuelve un audio de respuesta
 #   3. Frontend descarga el audio de respuesta y lo envía al endpoint /api/audio/play
 #   4. El servidor reproduce el audio en los parlantes usando PulseAudio/ffmpeg
