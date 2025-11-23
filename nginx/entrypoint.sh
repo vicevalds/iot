@@ -32,7 +32,7 @@ else
     
     # Reemplazar el dominio en la configuración si es necesario
     # (En caso de que el dominio sea diferente al hardcodeado)
-    sed "s/input.vvaldes.me/$DOMAIN/g" /etc/nginx/nginx-full.conf > /tmp/nginx.conf
+    sed "s/input.vicevalds.dev/$DOMAIN/g" /etc/nginx/nginx-full.conf > /tmp/nginx.conf
     
     # Verificar que los certificados son válidos
     if openssl x509 -in "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" -noout -checkend 86400 > /dev/null 2>&1; then

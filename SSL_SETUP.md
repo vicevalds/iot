@@ -190,7 +190,7 @@ docker compose restart nginx
 
 ```bash
 # Ver información de los certificados
-docker compose exec nginx openssl x509 -in /etc/letsencrypt/live/input.vvaldes.me/fullchain.pem -noout -dates
+docker compose exec nginx openssl x509 -in /etc/letsencrypt/live/input.vicevalds.dev/fullchain.pem -noout -dates
 
 # Ver logs de nginx
 docker compose logs -f nginx
@@ -255,7 +255,7 @@ docker compose exec nginx cat /etc/nginx/nginx.conf
 
 1. **Verifica que los certificados existen:**
    ```bash
-   docker compose exec nginx test -f /etc/letsencrypt/live/input.vvaldes.me/fullchain.pem && echo "OK" || echo "FALTA"
+   docker compose exec nginx test -f /etc/letsencrypt/live/input.vicevalds.dev/fullchain.pem && echo "OK" || echo "FALTA"
    docker compose exec nginx ls -la /etc/letsencrypt/live/
    ```
 
@@ -266,7 +266,7 @@ docker compose exec nginx cat /etc/nginx/nginx.conf
 
 3. **Verifica permisos de los certificados:**
    ```bash
-   docker compose exec nginx ls -la /etc/letsencrypt/live/input.vvaldes.me/
+   docker compose exec nginx ls -la /etc/letsencrypt/live/input.vicevalds.dev/
    ```
 
 4. **Reinicia los servicios:**
@@ -294,7 +294,7 @@ Esto puede ocurrir si OCSP stapling no está configurado correctamente. El scrip
 
 ```bash
 # Verificar que chain.pem existe
-docker compose exec nginx test -f /etc/letsencrypt/live/input.vvaldes.me/chain.pem
+docker compose exec nginx test -f /etc/letsencrypt/live/input.vicevalds.dev/chain.pem
 ```
 
 ## Acceso a la aplicación

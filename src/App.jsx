@@ -11,7 +11,7 @@ function App() {
     formData.append('audio', audioBlob, 'recording.webm');
 
     try {
-      const response = await fetch('https://app.vvaldes.me/api/agent/process-audio', {
+      const response = await fetch('https://app.vicevalds.dev/api/agent/process-audio', {
         method: 'POST',
         body: formData,
       });

@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker compose)" ]; then
   exit 1
 fi
 
-domains=(iot.vvaldes.me)
+domains=(iot.vicevalds.dev)
 rsa_key_size=4096
 data_path="./certbot"
 email="" # Adding a valid email is recommended (IMPORTANTE: Agrega tu email aquí)
