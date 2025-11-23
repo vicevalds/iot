@@ -123,7 +123,15 @@ app.post('/api/agent/process-audio', upload.single('audio'), async (req, res) =>
     const audioBuffer = req.file.buffer;
     const mimetype = req.file.mimetype;
 
-    console.log(`Enviando audio a vicevalds: ${req.file.originalname} (${mimetype}, ${audioBuffer.length} bytes)`);
+    console.log('');
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('📤 ENVIANDO AUDIO AL SERVIDOR VICEVALDS');
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`📁 Archivo: ${req.file.originalname}`);
+    console.log(`📊 Tamaño: ${audioBuffer.length} bytes (${(audioBuffer.length / 1024).toFixed(2)} KB)`);
+    console.log(`📋 MIME: ${mimetype}`);
+    console.log(`🌐 Endpoint: https://app.vicevalds.dev/api/agent/process-audio`);
+    console.log('⏳ Enviando petición...');
 
     // Crear FormData para enviar a vicevalds
     const formData = new FormData();
@@ -133,25 +141,38 @@ app.post('/api/agent/process-audio', upload.single('audio'), async (req, res) =>
       contentType: mimetype,
     });
 
-    console.log('Enviando petición a vicevalds...');
-
     // Enviar a vicevalds
     const response = await axios.post('https://app.vicevalds.dev/api/agent/process-audio', formData, {
       headers: formData.getHeaders(),
       validateStatus: () => true, // No lanzar error en status no-2xx
     });
 
-    console.log(`Respuesta de vicevalds: ${response.status} ${response.statusText}`);
+    console.log('');
+    console.log('───────────────────────────────────────────────────────────────');
+    console.log('📥 RESPUESTA DEL SERVIDOR VICEVALDS');
+    console.log('───────────────────────────────────────────────────────────────');
+    console.log(`📊 Status: ${response.status} ${response.statusText}`);
 
     if (response.status >= 200 && response.status < 300) {
       const data = response.data;
-      console.log('Respuesta exitosa de vicevalds:', JSON.stringify(data, null, 2));
+
+      console.log('✅ AUDIO ENVIADO EXITOSAMENTE');
+      console.log('📦 Datos de respuesta:');
+      console.log(JSON.stringify(data, null, 2));
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('');
 
       // Devolver la respuesta completa de vicevalds al cliente
       res.json(data);
     } else {
       const errorText = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-      console.error(`Error de vicevalds (${response.status}):`, errorText);
+
+      console.log('❌ ERROR: NO SE PUDO ENVIAR EL AUDIO');
+      console.log(`⚠️  Status: ${response.status} ${response.statusText}`);
+      console.log('📄 Detalles del error:');
+      console.log(errorText);
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('');
 
       res.status(response.status).json({
         success: false,
@@ -161,7 +182,14 @@ app.post('/api/agent/process-audio', upload.single('audio'), async (req, res) =>
     }
 
   } catch (error) {
-    console.error('Error al comunicarse con vicevalds:', error);
+    console.log('');
+    console.log('❌ EXCEPCIÓN AL COMUNICARSE CON VICEVALDS');
+    console.log(`⚠️  Error: ${error.message}`);
+    console.log('📄 Stack trace:');
+    console.log(error.stack);
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('');
+
     res.status(500).json({
       success: false,
       error: error.message,
